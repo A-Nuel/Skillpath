@@ -1,3 +1,5 @@
+export const config = { runtime: 'edge' };
+
 const SYSTEM_PROMPT = `You are SkillPath, a sharp and deeply perceptive digital career advisor. You are having a real conversation with {NAME} to figure out the exact right digital skill for them to learn even if they have zero idea what they want.
 
 You have a diagnostic framework covering:
@@ -21,36 +23,37 @@ Format: {"turn":1,"reaction":"...","question":"...","type":"mcq","options":["A",
 AFTER TURN 15 respond with ONLY a raw JSON object. No markdown. No backticks. Start with { end with }
 Format: {"FINAL":true,"skill":"Name","emoji":"emoji","headline":"headline","personalReason":"reason","fitScore":85,"income":{"beginner":"$X/month","intermediate":"$X/month","expert":"$X/month"},"timeToEarn":"X weeks","roadmap":[{"phase":"Foundation","duration":"2 weeks","items":["a","b","c"]},{"phase":"Build Portfolio","duration":"3 weeks","items":["a","b","c"]},{"phase":"Land First Client","duration":"2 weeks","items":["a","b","c"]},{"phase":"Scale Up","duration":"2 months","items":["a","b","c"]}],"resources":[{"name":"Name","type":"Course","url":"https://url.com","free":true,"icon":"emoji","why":"reason"},{"name":"Name","type":"Platform","url":"https://url.com","free":false,"icon":"emoji","why":"reason"},{"name":"Name","type":"Community","url":"https://url.com","free":true,"icon":"emoji","why":"reason"},{"name":"Name","type":"Tool","url":"https://url.com","free":true,"icon":"emoji","why":"reason"},{"name":"Name","type":"Course","url":"https://url.com","free":false,"icon":"emoji","why":"reason"}],"warningSign":"warning","alternativeSkill":"alt skill"}`;
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json',
+};
 
+function respond(data, status) {
+  return new Response(JSON.stringify(data), { status: status || 200, headers: CORS });
+}
+
+export default async function handler(req) {
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return new Response(null, { headers: CORS });
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return respond({ error: 'Method not allowed' }, 405);
   }
 
   try {
-    // Log raw body before anything else
-    console.log('RAW BODY TYPE:', typeof req.body);
-    console.log('RAW BODY:', JSON.stringify(req.body));
+    // Edge runtime uses req.json() not req.body
+    const body = await req.json();
 
-    const body = req.body || {};
     const messages = body.messages || [];
     const name = body.name || 'there';
     const turnNote = body.turnNote || '';
-
-    console.log('MESSAGES COUNT:', messages.length);
-    console.log('NAME:', name);
-
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'API key not configured' });
+      return respond({ error: 'API key not configured' }, 500);
     }
 
     const systemPrompt = SYSTEM_PROMPT.replace(/\{NAME\}/g, name);
@@ -82,11 +85,8 @@ export default async function handler(req, res) {
     }
 
     if (contents.length === 0) {
-      return res.status(400).json({ error: 'No valid messages' });
+      return respond({ error: 'No valid messages' }, 400);
     }
-
-    console.log('CONTENTS COUNT:', contents.length);
-    console.log('FIRST CONTENT ROLE:', contents[0].role);
 
     const payload = {
       system_instruction: { parts: [{ text: systemPrompt }] },
@@ -100,22 +100,16 @@ export default async function handler(req, res) {
 
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' + apiKey;
 
-    console.log('CALLING GEMINI...');
-
-    const response = await fetch(url, {
+    const geminiRes = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    console.log('GEMINI STATUS:', response.status);
-
-    const data = await response.json();
-
-    console.log('GEMINI RESPONSE KEYS:', Object.keys(data));
+    const data = await geminiRes.json();
 
     if (!data.candidates || !data.candidates[0]) {
-      return res.status(500).json({ error: 'Gemini error', raw: data });
+      return respond({ error: 'Gemini error', raw: data }, 500);
     }
 
     let text = String(data.candidates[0].content.parts[0].text || '').trim();
@@ -125,12 +119,9 @@ export default async function handler(req, res) {
     const b = text.lastIndexOf('}');
     if (a !== -1 && b !== -1) text = text.slice(a, b + 1);
 
-    console.log('RETURNING TEXT LENGTH:', text.length);
-
-    return res.status(200).json({ content: [{ text }] });
+    return respond({ content: [{ text }] }, 200);
 
   } catch (err) {
-    console.log('CAUGHT ERROR:', err.message);
-    return res.status(500).json({ error: err.message });
+    return respond({ error: err.message }, 500);
   }
 }
