@@ -44,9 +44,12 @@ export default async function handler(req) {
   }
 
   try {
-    // Edge runtime uses req.json() not req.body
-    const body = await req.json();
-
+    let body = {};
+    try {
+      body = await req.json();
+    } catch(parseErr) {
+      return respond({ error: 'Body parse failed: ' + parseErr.message }, 500);
+    }
     const messages = body.messages || [];
     const name = body.name || 'there';
     const turnNote = body.turnNote || '';
