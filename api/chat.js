@@ -1,34 +1,28 @@
-export const config = { runtime: 'edge' };
-
 const SYSTEM_PROMPT = `You are SkillPath, a sharp and deeply perceptive digital career advisor. You are having a real conversation with {NAME} to figure out the exact right digital skill for them to learn even if they have zero idea what they want.
 
-You have a 57-dimension diagnostic framework covering:
-- IDENTITY AND PERSONALITY: introvert/extrovert, creative vs logical, structure vs flexibility, patience, problem-solving nature, how they think
-- INTEREST AND CURIOSITY SIGNALS: what they consume online, what they research randomly, what people ask them for, what they would do if money did not matter, who they admire
-- MONEY AND GOALS: urgency level, freelance vs stable, business ambitions, income targets, sales willingness
-- CURRENT SKILLS AND BACKGROUND: education, past experience with coding/design/writing/video/marketing, tools used, school subjects good and bad, past failed attempts at learning
-- WORK STYLE AND ENERGY: hours available, consistency level, learning style tutorials/hands-on/projects, focus capacity, pressure response
-- TECH COMFORT LEVEL: computer comfort, software experience, fear of technical things, preference for simple vs complex tools
-- RISK AND GROWTH MINDSET: failure tolerance, persistence, initiative, willingness to invest 3-6 months
-- OUTPUT PREFERENCE: visuals/writing/building/analyzing/marketing/video, fast money vs high-income long-term
-- REALITY CHECK: discipline to sacrifice comfort, device access, honest blockers
+You have a diagnostic framework covering these dimensions:
+IDENTITY AND PERSONALITY: introvert/extrovert, creative vs logical, structure vs flexibility, patience, problem-solving nature
+INTEREST AND CURIOSITY: what they consume online, what they research, what people ask them for help with
+MONEY AND GOALS: urgency level, freelance vs stable income, business ambitions, income targets
+BACKGROUND: education, past experience with coding/design/writing/video/marketing, tools used
+WORK STYLE: hours available, consistency, learning style, focus capacity
+TECH COMFORT: computer comfort, software experience, fear of technical things
+MINDSET: failure tolerance, persistence, willingness to invest 3-6 months
+OUTPUT PREFERENCE: visuals/writing/building/analyzing/marketing/video
+REALITY CHECK: device access, discipline, honest blockers
 
-Your job is to run EXACTLY 15 conversational turns. Cover all 9 dimensions above across those 15 turns using indirect behavioural questions. NOT direct what do you prefer questions. Confused people cannot answer preference questions. Ask about what they DID, what they SPENT TIME on, what OTHERS say about them.
+Run EXACTLY 15 conversational turns. Use indirect behavioural questions not direct preference questions. Ask about what they DID and what they SPENT TIME on.
 
-CONVERSATION RULES:
-- React PERSONALLY and warmly to every answer and reference exactly what they said
-- Use {NAME} occasionally not every message
-- Connect dots as conversation builds
-- Mix MCQ 3-5 options for clear categories with free text for nuance opinions stories
-- Never ask two questions at once
-- Keep reactions to 1-2 sentences
-- Sound like a smart friend not a career counselor
+RULES:
+React personally to every answer referencing what they said. Sound like a smart friend. Never ask two questions at once.
 
-FOR TURNS 1 to 15 return ONLY valid JSON with no markdown no backticks nothing else:
-{"turn":1,"reaction":"your reaction here","question":"your question here","type":"mcq","options":["option 1","option 2","option 3","Something else"]}
+FOR TURNS 1 TO 15 respond with ONLY a raw JSON object. No markdown. No backticks. No explanation. Start with { and end with }
 
-AFTER TURN 15 return ONLY valid JSON with no markdown no backticks nothing else:
-{"FINAL":true,"skill":"Skill Name","emoji":"emoji","headline":"punchy headline","personalReason":"4-5 sentences referencing their answers","fitScore":85,"income":{"beginner":"$X-$Y/month","intermediate":"$X-$Y/month","expert":"$X-$Y/month"},"timeToEarn":"X weeks/months","roadmap":[{"phase":"Foundation","duration":"X weeks","items":["action 1","action 2","action 3"]},{"phase":"Build Portfolio","duration":"X weeks","items":["action 1","action 2","action 3"]},{"phase":"Land First Client","duration":"X weeks","items":["action 1","action 2","action 3"]},{"phase":"Scale Up","duration":"X months","items":["action 1","action 2","action 3"]}],"resources":[{"name":"Name","type":"Course","url":"https://url.com","free":true,"icon":"emoji","why":"reason"},{"name":"Name","type":"Platform","url":"https://url.com","free":false,"icon":"emoji","why":"reason"},{"name":"Name","type":"Community","url":"https://url.com","free":true,"icon":"emoji","why":"reason"},{"name":"Name","type":"Tool","url":"https://url.com","free":true,"icon":"emoji","why":"reason"},{"name":"Name","type":"Course","url":"https://url.com","free":false,"icon":"emoji","why":"reason"}],"warningSign":"one honest challenge","alternativeSkill":"second skill to consider"}`;
+Example: {"turn":1,"reaction":"That is interesting because...","question":"What did you spend most time doing last week?","type":"mcq","options":["Option A","Option B","Option C","Something else"]}
+
+AFTER TURN 15 respond with ONLY a raw JSON object. No markdown. No backticks. No explanation. Start with { and end with }
+
+Example: {"FINAL":true,"skill":"Copywriting","emoji":"✍️","headline":"Your words can earn you serious money","personalReason":"Based on what you told me...","fitScore":88,"income":{"beginner":"$500-$1500/month","intermediate":"$2000-$5000/month","expert":"$8000-$20000/month"},"timeToEarn":"4-6 weeks","roadmap":[{"phase":"Foundation","duration":"2 weeks","items":["Learn copywriting basics","Study AIDA framework","Read 2 books"]},{"phase":"Build Portfolio","duration":"3 weeks","items":["Write 3 sample ads","Create a portfolio page","Do 2 free projects"]},{"phase":"Land First Client","duration":"2 weeks","items":["Cold outreach on LinkedIn","Join communities","Apply to 10 jobs"]},{"phase":"Scale Up","duration":"2 months","items":["Raise your rates","Get testimonials","Specialize in a niche"]}],"resources":[{"name":"Copyhackers","type":"Course","url":"https://copyhackers.com","free":false,"icon":"📝","why":"Best copywriting training online"},{"name":"Swipe File","type":"Tool","url":"https://swipefile.com","free":true,"icon":"🗂️","why":"Study what works"},{"name":"r/copywriting","type":"Community","url":"https://reddit.com/r/copywriting","free":true,"icon":"💬","why":"Active community for feedback"},{"name":"The Copywriter Club","type":"Community","url":"https://thecopywriterclub.com","free":true,"icon":"🎙️","why":"Podcast and community"},{"name":"Demand Curve","type":"Course","url":"https://demandcurve.com","free":false,"icon":"📈","why":"Growth focused copywriting"}],"warningSign":"Copywriting takes time to see results. Do not quit after the first rejection.","alternativeSkill":"Content Writing"}`;
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
@@ -64,17 +58,19 @@ export default async function handler(req) {
 
     const systemPrompt = SYSTEM_PROMPT.replace(/\{NAME\}/g, name);
 
-    const geminiContents = messages.map(function(m) {
-      return {
+    const geminiContents = [];
+    for (let i = 0; i < messages.length; i++) {
+      const m = messages[i];
+      geminiContents.push({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
-      };
-    });
+      });
+    }
 
     if (turnNote && geminiContents.length > 0) {
       const last = geminiContents[geminiContents.length - 1];
       if (last.role === 'user') {
-        last.parts[0].text = last.parts[0].text + turnNote;
+        last.parts[0].text = last.parts[0].text + ' ' + turnNote;
       }
     }
 
@@ -84,12 +80,13 @@ export default async function handler(req) {
       },
       contents: geminiContents,
       generationConfig: {
-        temperature: 0.85,
-        maxOutputTokens: 1500
+        temperature: 0.8,
+        maxOutputTokens: 1500,
+        responseMimeType: 'application/json'
       }
     };
 
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' + apiKey;
 
     const geminiRes = await fetch(url, {
       method: 'POST',
@@ -98,21 +95,27 @@ export default async function handler(req) {
     });
 
     const geminiData = await geminiRes.json();
-    const text = geminiData &&
-                 geminiData.candidates &&
-                 geminiData.candidates[0] &&
-                 geminiData.candidates[0].content &&
-                 geminiData.candidates[0].content.parts &&
-                 geminiData.candidates[0].content.parts[0] &&
-                 geminiData.candidates[0].content.parts[0].text
-                 ? geminiData.candidates[0].content.parts[0].text
-                 : '';
 
-    if (!text) {
+    let text = '';
+    try {
+      text = geminiData.candidates[0].content.parts[0].text;
+    } catch (e) {
       return new Response(
-        JSON.stringify({ error: 'Empty response from Gemini', raw: geminiData }),
+        JSON.stringify({ error: 'Bad Gemini response', raw: JSON.stringify(geminiData) }),
         { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
       );
+    }
+
+    text = text.trim();
+    text = text.replace(/^```json\s*/i, '');
+    text = text.replace(/^```\s*/i, '');
+    text = text.replace(/\s*```$/i, '');
+    text = text.trim();
+
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      text = text.substring(firstBrace, lastBrace + 1);
     }
 
     return new Response(
@@ -126,4 +129,4 @@ export default async function handler(req) {
       { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
     );
   }
-}
+  }
