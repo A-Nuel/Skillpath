@@ -35,22 +35,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages, name, turnNote } = req.body;
+    // Log raw body before anything else
+    console.log('RAW BODY TYPE:', typeof req.body);
+    console.log('RAW BODY:', JSON.stringify(req.body));
+
+    const body = req.body || {};
+    const messages = body.messages || [];
+    const name = body.name || 'there';
+    const turnNote = body.turnNote || '';
+
+    console.log('MESSAGES COUNT:', messages.length);
+    console.log('NAME:', name);
+
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    const systemPrompt = SYSTEM_PROMPT.replace(/\{NAME\}/g, name || 'there');
+    const systemPrompt = SYSTEM_PROMPT.replace(/\{NAME\}/g, name);
 
-    // Build Gemini contents array with strict alternating roles
-    const raw = messages || [];
+    // Build Gemini contents with strict alternating roles
     const contents = [];
-
-    for (let i = 0; i < raw.length; i++) {
-      const role = raw[i].role === 'assistant' ? 'model' : 'user';
-      const text = String(raw[i].content || '').slice(0, 1500);
+    for (let i = 0; i < messages.length; i++) {
+      const role = messages[i].role === 'assistant' ? 'model' : 'user';
+      const text = String(messages[i].content || '').slice(0, 1500);
       if (!text.trim()) continue;
 
       if (contents.length === 0) {
@@ -62,12 +71,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // Must start with user
+    // Must start with user role
     while (contents.length > 0 && contents[0].role === 'model') {
       contents.shift();
     }
 
-    // Append turn note
+    // Append turn note to last user message
     if (turnNote && contents.length > 0 && contents[contents.length - 1].role === 'user') {
       contents[contents.length - 1].parts[0].text += ' ' + String(turnNote);
     }
@@ -75,6 +84,9 @@ export default async function handler(req, res) {
     if (contents.length === 0) {
       return res.status(400).json({ error: 'No valid messages' });
     }
+
+    console.log('CONTENTS COUNT:', contents.length);
+    console.log('FIRST CONTENT ROLE:', contents[0].role);
 
     const payload = {
       system_instruction: { parts: [{ text: systemPrompt }] },
@@ -88,13 +100,19 @@ export default async function handler(req, res) {
 
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' + apiKey;
 
+    console.log('CALLING GEMINI...');
+
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
+    console.log('GEMINI STATUS:', response.status);
+
     const data = await response.json();
+
+    console.log('GEMINI RESPONSE KEYS:', Object.keys(data));
 
     if (!data.candidates || !data.candidates[0]) {
       return res.status(500).json({ error: 'Gemini error', raw: data });
@@ -107,9 +125,12 @@ export default async function handler(req, res) {
     const b = text.lastIndexOf('}');
     if (a !== -1 && b !== -1) text = text.slice(a, b + 1);
 
+    console.log('RETURNING TEXT LENGTH:', text.length);
+
     return res.status(200).json({ content: [{ text }] });
 
   } catch (err) {
+    console.log('CAUGHT ERROR:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
