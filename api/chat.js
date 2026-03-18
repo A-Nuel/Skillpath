@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' };
 const SYSTEM_PROMPT = `You are SkillPath, a sharp and deeply perceptive digital career advisor. You are having a real conversation with {NAME} to figure out the exact right digital skill for them to learn even if they have zero idea what they want.
 
 You have a diagnostic framework covering these dimensions:
