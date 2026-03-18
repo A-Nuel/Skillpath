@@ -44,12 +44,20 @@ export default async function handler(req) {
   }
 
   try {
-    let body = {};
-    try {
-      body = await req.json();
-    } catch(parseErr) {
-      return respond({ error: 'Body parse failed: ' + parseErr.message }, 500);
+    // Read body as raw text first then parse — avoids edge runtime body stream issues
+    const rawText = await req.text();
+
+    if (!rawText || rawText.trim() === '') {
+      return respond({ error: 'Empty request body' }, 400);
     }
+
+    let body;
+    try {
+      body = JSON.parse(rawText);
+    } catch (e) {
+      return respond({ error: 'Invalid JSON body: ' + e.message }, 400);
+    }
+
     const messages = body.messages || [];
     const name = body.name || 'there';
     const turnNote = body.turnNote || '';
