@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillPath — Find Your Digital Skill</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0a0f;
+  --bg2:      #0f0f18;
+  --surface:  #111120;
+  --surface2: #181828;
+  --surface3: #1e1e32;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.12);
+  --accent:   #7c6aff;
+  --accent-d: #5b4de0;
+  --teal:     #00d4aa;
+  --red:      #ff6b6b;
+  --text:     #eeeaff;
+  --text2:    #b8b4d4;
+  --muted:    #6b6890;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 0%,  rgba(124,106,255,0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 85% 100%, rgba(0,212,170,0.07)  0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at 50% 50%,  rgba(124,106,255,0.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.z { position: relative; z-index: 1; }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ══════════════════════
+   HERO
+══════════════════════ */
+#screen-hero {
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(124,106,255,0.12);
+  border: 1px solid rgba(124,106,255,0.25);
+  color: var(--accent);
+  padding: 8px 20px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+  font-family: 'Syne', sans-serif;
+}
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.6rem, 7vw, 4.4rem);
+  font-weight: 800;
+  line-height: 1.08;
+  margin-bottom: 22px;
+  letter-spacing: -0.02em;
+}
+
+.grad {
+  background: linear-gradient(135deg, #a594ff 0%, #7c6aff 40%, #00d4aa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--text2);
+  max-width: 460px;
+  margin: 0 auto 44px;
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #7c6aff, #5b4de0);
+  color: white;
+  border: none;
+  padding: 17px 46px;
+  border-radius: 100px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 40px rgba(124,106,255,0.35);
+}
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 60px rgba(124,106,255,0.55);
+}
+
+.hero-meta {
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.skill-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 64px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.skill-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 7px 16px;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.skill-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ══════════════════════
+   NAME
+══════════════════════ */
+#screen-name {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.name-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 28px;
+  padding: 52px 44px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 0 80px rgba(124,106,255,0.08);
+}
+
+.name-emoji { font-size: 2.4rem; margin-bottom: 20px; }
+
+.name-card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.name-card p {
+  color: var(--text2);
+  font-size: 0.88rem;
+  margin-bottom: 32px;
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+.name-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: 14px;
+  padding: 16px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  color: var(--text);
+  outline: none;
+  text-align: center;
+  font-weight: 500;
+  margin-bottom: 14px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.name-input::placeholder { color: var(--muted); font-weight: 300; }
+.name-input:focus { border-color: var(--accent); background: var(--surface3); }
+
+/* ══════════════════════
+   CHAT
+══════════════════════ */
+#screen-chat {
+  flex-direction: column;
+  height: 100vh;
+  max-width: 740px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(16px);
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 20;
+}
+
+.adv-avatar {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, #7c6aff, #5b4de0);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(124,106,255,0.3);
+}
+
+.adv-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; }
+.adv-status { font-size: 0.73rem; color: var(--teal); font-weight: 500; margin-top: 1px; }
+
+.prog-wrap { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; }
+.prog-outer { width: 90px; height: 4px; background: var(--surface3); border-radius: 100px; overflow: hidden; }
+.prog-fill  { height: 100%; background: linear-gradient(90deg, #7c6aff, #00d4aa); border-radius: 100px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); width: 0%; }
+.prog-txt   { font-size: 0.72rem; color: var(--muted); font-weight: 600; min-width: 32px; }
+
+.msg-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scroll-behavior: smooth;
+}
+.msg-area::-webkit-scrollbar { width: 4px; }
+.msg-area::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+.msg-row { display: flex; gap: 11px; animation: msgPop 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+.msg-row.user-row { justify-content: flex-end; }
+
+@keyframes msgPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.msg-av {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #7c6aff, #5b4de0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.bubble {
+  max-width: 78%;
+  padding: 13px 17px;
+  border-radius: 20px;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+.bubble.ai-b { background: var(--surface2); border: 1px solid var(--border); border-top-left-radius: 4px; color: var(--text); }
+.bubble.user-b { background: linear-gradient(135deg, #7c6aff, #5b4de0); border-bottom-right-radius: 4px; color: white; box-shadow: 0 4px 20px rgba(124,106,255,0.25); }
+.bubble.typing-b { background: var(--surface2); border: 1px solid var(--border); border-top-left-radius: 4px; padding: 16px 20px; }
+
+.typing-dots { display: flex; gap: 5px; align-items: center; }
+.typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: tdot 1.3s ease-in-out infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.16s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.32s; }
+@keyframes tdot { 0%,60%,100% { transform: scale(1); opacity: 0.45; } 30% { transform: scale(1.3); opacity: 1; } }
+
+/* Options */
+.opt-zone { padding: 0 20px 12px 65px; }
+.opt-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.11em; color: var(--muted); text-transform: uppercase; margin-bottom: 9px; font-family: 'Syne', sans-serif; }
+.mcq-list { display: flex; flex-direction: column; gap: 7px; }
+
+.mcq-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--text2);
+  width: 100%;
+  animation: optIn 0.3s ease both;
+}
+.mcq-btn:nth-child(1) { animation-delay: 0.05s; }
+.mcq-btn:nth-child(2) { animation-delay: 0.10s; }
+.mcq-btn:nth-child(3) { animation-delay: 0.15s; }
+.mcq-btn:nth-child(4) { animation-delay: 0.20s; }
+.mcq-btn:nth-child(5) { animation-delay: 0.25s; }
+@keyframes optIn { from { opacity:0; transform: translateX(-8px); } to { opacity:1; transform: translateX(0); } }
+
+.mcq-btn:hover { border-color: var(--accent); background: rgba(124,106,255,0.08); color: var(--text); transform: translateX(4px); }
+.mcq-key { width: 26px; height: 26px; border-radius: 7px; background: var(--surface3); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--muted); flex-shrink: 0; transition: all 0.2s; font-family: 'Syne', sans-serif; }
+.mcq-btn:hover .mcq-key { background: var(--accent); color: white; border-color: var(--accent); }
+
+.free-wrap { padding: 10px 20px 18px; border-top: 1px solid var(--border); background: rgba(10,10,15,0.85); backdrop-filter: blur(16px); flex-shrink: 0; }
+.input-row { display: flex; gap: 10px; background: var(--surface2); border: 1.5px solid var(--border2); border-radius: 100px; padding: 8px 8px 8px 20px; transition: border-color 0.2s; }
+.input-row:focus-within { border-color: var(--accent); }
+.chat-input { flex: 1; background: none; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--text); }
+.chat-input::placeholder { color: var(--muted); }
+.send-btn { width: 38px; height: 38px; background: linear-gradient(135deg, #7c6aff, #5b4de0); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.95rem; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 0 16px rgba(124,106,255,0.3); }
+.send-btn:hover { transform: scale(1.08); }
+
+/* ══════════════════════
+   LOADING
+══════════════════════ */
+#screen-loading { align-items: center; justify-content: center; padding: 40px 24px; }
+
+.loading-inner { max-width: 380px; width: 100%; text-align: center; }
+
+.orb-wrap { width: 90px; height: 90px; margin: 0 auto 36px; position: relative; }
+.orb-ring { position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid transparent; }
+.orb-ring.r1 { border-top-color: var(--accent); animation: spin 1s linear infinite; }
+.orb-ring.r2 { inset: 10px; border-top-color: var(--teal); animation: spin 1.6s linear infinite reverse; }
+.orb-core { position: absolute; inset: 22px; background: var(--surface2); border-radius: 50%; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-title { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+.loading-sub { color: var(--text2); font-size: 0.85rem; font-weight: 300; margin-bottom: 36px; }
+
+.steps-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.step-item { display: flex; align-items: center; gap: 12px; font-size: 0.84rem; color: var(--muted); opacity: 0; transform: translateX(-8px); transition: opacity 0.45s ease, transform 0.45s ease, color 0.4s; }
+.step-item.vis  { opacity: 1; transform: translateX(0); }
+.step-item.done { color: var(--teal); }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--surface3); flex-shrink: 0; border: 1px solid var(--border2); transition: background 0.4s, border-color 0.4s; }
+.step-item.vis  .step-dot { background: var(--accent); border-color: var(--accent); }
+.step-item.done .step-dot { background: var(--teal);   border-color: var(--teal); }
+
+/* ══════════════════════
+   RESULT
+══════════════════════ */
+#screen-result { flex-direction: column; min-height: 100vh; }
+
+.res-hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 52px 24px 40px; text-align: center; position: relative; overflow: hidden; }
+.res-hero::before { content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%); width: 500px; height: 300px; background: radial-gradient(ellipse, rgba(124,106,255,0.2) 0%, transparent 70%); pointer-events: none; }
+
+.res-for { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; font-family: 'Syne', sans-serif; }
+.res-skill { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 6vw, 3rem); font-weight: 800; margin-bottom: 10px; background: linear-gradient(135deg, #a594ff, #7c6aff, #00d4aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.res-headline { color: var(--text2); font-style: italic; font-size: 1rem; margin-bottom: 24px; font-weight: 300; max-width: 460px; margin-left: auto; margin-right: auto; }
+
+.fit-badge { display: inline-flex; align-items: center; gap: 10px; background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.25); color: var(--teal); padding: 9px 20px; border-radius: 100px; font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; }
+.fit-bar { width: 60px; height: 6px; background: rgba(0,212,170,0.2); border-radius: 100px; overflow: hidden; }
+.fit-fill { height: 100%; background: var(--teal); border-radius: 100px; transition: width 1s ease 0.5s; }
+
+.res-content { max-width: 740px; margin: 0 auto; padding: 32px 20px 80px; width: 100%; }
+
+.card-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; font-family: 'Syne', sans-serif; }
+
+.why-card { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 20px; padding: 26px; margin-bottom: 18px; }
+.why-text { font-size: 0.93rem; line-height: 1.78; color: var(--text2); font-weight: 300; }
+
+.warn-card { background: rgba(255,107,107,0.06); border: 1px solid rgba(255,107,107,0.15); border-radius: 16px; padding: 16px 20px; margin-bottom: 18px; display: flex; gap: 12px; align-items: flex-start; font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+.alt-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 12px; align-items: center; font-size: 0.85rem; color: var(--text2); }
+.alt-lbl { font-size: 0.68rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; font-family: 'Syne', sans-serif; }
+.alt-skill { font-weight: 600; color: var(--text); }
+
+.sec-head { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; margin-bottom: 13px; color: var(--text); }
+
+.income-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 11px; margin-bottom: 11px; }
+.inc-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 16px 14px; text-align: center; }
+.inc-tier { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; font-family: 'Syne', sans-serif; }
+.inc-amount { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+.inc-note { font-size: 0.68rem; color: var(--muted); }
+
+.time-pill { background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.18); border-radius: 12px; padding: 12px 16px; font-size: 0.83rem; color: var(--teal); font-weight: 500; margin-bottom: 24px; }
+
+.tabs-nav { display: flex; gap: 3px; background: var(--surface); border-radius: 14px; padding: 4px; border: 1px solid var(--border); margin-bottom: 18px; }
+.tab-pill { flex: 1; padding: 10px 6px; border: none; background: none; font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; cursor: pointer; border-radius: 10px; color: var(--muted); transition: all 0.2s; letter-spacing: 0.03em; }
+.tab-pill.on { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.tab-panel { display: none; }
+.tab-panel.on { display: block; animation: tabIn 0.3s ease; }
+@keyframes tabIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+.rm-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px 18px 62px; margin-bottom: 10px; position: relative; }
+.rm-num { position: absolute; left: 16px; top: 16px; width: 30px; height: 30px; background: linear-gradient(135deg, #7c6aff, #5b4de0); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 800; color: white; }
+.rm-phase { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 3px; }
+.rm-dur { font-size: 0.72rem; color: var(--accent); font-weight: 600; margin-bottom: 9px; }
+.rm-items { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.rm-items li { font-size: 0.83rem; color: var(--text2); padding-left: 16px; position: relative; line-height: 1.5; font-weight: 300; }
+.rm-items li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-size: 0.75rem; }
+
+.res-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 15px 18px; margin-bottom: 9px; display: flex; align-items: center; gap: 14px; text-decoration: none; color: var(--text); transition: all 0.22s; }
+.res-card:hover { border-color: var(--accent); background: rgba(124,106,255,0.06); transform: translateX(4px); }
+.res-icon { width: 40px; height: 40px; border-radius: 11px; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.res-name { font-weight: 600; font-size: 0.87rem; margin-bottom: 2px; }
+.res-meta { font-size: 0.74rem; color: var(--muted); }
+.res-badge { margin-left: auto; padding: 4px 12px; border-radius: 100px; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; font-family: 'Syne', sans-serif; letter-spacing: 0.04em; }
+.badge-free { background: rgba(0,212,170,0.12); color: var(--teal); }
+.badge-paid { background: rgba(255,107,107,0.12); color: var(--red); }
+
+.restart-btn { display: block; margin: 28px auto 0; background: none; border: 1.5px solid var(--border2); color: var(--muted); padding: 12px 30px; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 0.87rem; cursor: pointer; transition: all 0.2s; }
+.restart-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+@media (max-width: 480px) {
+  .income-grid { grid-template-columns: 1fr; }
+  .bubble { max-width: 88%; }
+  .opt-zone { padding-left: 20px; }
+  .name-card { padding: 36px 24px; }
+  .hero-title { font-size: 2.4rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div id="screen-hero" class="screen active z">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:60px 24px;text-align:center;">
+    <div class="hero-eyebrow">✦ AI Skill Advisor · Powered by Gemini</div>
+    <h1 class="hero-title">Stop guessing.<br><span class="grad">Find your skill.</span></h1>
+    <p class="hero-sub">A 15-question diagnostic conversation that maps your personality, strengths, and goals to the exact digital skill built for you — with a full roadmap to get paid.</p>
+    <button class="btn-primary" onclick="goName()">Start My Assessment →</button>
+    <p class="hero-meta">Free · ~4 minutes · No account needed</p>
+    <div class="skill-cloud">
+      <span class="skill-chip">💻 Web Dev</span>
+      <span class="skill-chip">✍️ Copywriting</span>
+      <span class="skill-chip">🎨 UI/UX Design</span>
+      <span class="skill-chip">🤖 AI Automation</span>
+      <span class="skill-chip">📱 Social Media</span>
+      <span class="skill-chip">🎬 Video Editing</span>
+      <span class="skill-chip">📊 Data Analysis</span>
+      <span class="skill-chip">⚡ No-Code Dev</span>
+      <span class="skill-chip">📧 Email Marketing</span>
+      <span class="skill-chip">+ more</span>
+    </div>
+  </div>
+</div>
+
+<!-- NAME -->
+<div id="screen-name" class="screen z">
+  <div style="display:flex;flex:1;align-items:center;justify-content:center;padding:40px 24px;">
+    <div class="name-card">
+      <div class="name-emoji">👋</div>
+      <h2>What should I call you?</h2>
+      <p>Your advisor will use your name throughout the conversation to make this feel personal — because it is.</p>
+      <input type="text" class="name-input" id="name-inp" placeholder="First name…" maxlength="28" />
+      <button class="btn-primary" style="width:100%" onclick="beginChat()">Let's Begin →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="screen-chat" class="screen z">
+  <div class="topbar">
+    <div class="adv-avatar">🧭</div>
+    <div style="flex:1">
+      <div class="adv-name">SkillPath Advisor</div>
+      <div class="adv-status" id="adv-status">● Listening…</div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-outer"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="prog-txt" id="prog-txt">0/15</div>
+    </div>
+  </div>
+  <div class="msg-area" id="msg-area"></div>
+  <div class="opt-zone" id="opt-zone"></div>
+  <div class="free-wrap" id="free-wrap" style="display:none;">
+    <div class="input-row">
+      <input type="text" class="chat-input" id="free-inp" placeholder="Type your answer…" />
+      <button class="send-btn" onclick="sendFree()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="screen-loading" class="screen z">
+  <div style="display:flex;flex:1;align-items:center;justify-content:center;padding:40px 24px;">
+    <div class="loading-inner">
+      <div class="orb-wrap">
+        <div class="orb-ring r1"></div>
+        <div class="orb-ring r2"></div>
+        <div class="orb-core">🧠</div>
+      </div>
+      <div class="loading-title">Analysing your profile…</div>
+      <div class="loading-sub">Building your personalised recommendation</div>
+      <ul class="steps-list">
+        <li class="step-item" id="ls0"><div class="step-dot"></div>Reading your conversation</li>
+        <li class="step-item" id="ls1"><div class="step-dot"></div>Mapping personality &amp; strengths</li>
+        <li class="step-item" id="ls2"><div class="step-dot"></div>Matching to high-leverage skills</li>
+        <li class="step-item" id="ls3"><div class="step-dot"></div>Calculating income potential</li>
+        <li class="step-item" id="ls4"><div class="step-dot"></div>Building your learning roadmap</li>
+        <li class="step-item" id="ls5"><div class="step-dot"></div>Selecting your best resources</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen z">
+  <div class="res-hero" id="res-hero"></div>
+  <div class="res-content" id="res-body"></div>
+</div>
+
+<script>
+// ── State ──
+let uName  = '';
+let turn   = 0;
+let MAX    = 15;
+let hist   = [];
+let busy   = false;
+const ABC  = ['A','B','C','D','E','F'];
+
+// ── Screens ──
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+function goName() { show('name'); setTimeout(() => document.getElementById('name-inp').focus(), 300); }
+
+// ── Enter key ──
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('screen-name').classList.contains('active')) beginChat();
+  else if (document.getElementById('free-wrap').style.display !== 'none') sendFree();
+});
+
+// ── Begin ──
+function beginChat() {
+  const v = document.getElementById('name-inp').value.trim();
+  if (!v) return;
+  uName = v;
+  show('chat');
+  setTimeout(openChat, 500);
+}
+
+// ── Progress ──
+function setProgress(n) {
+  document.getElementById('prog-fill').style.width = Math.round((n / MAX) * 100) + '%';
+  document.getElementById('prog-txt').textContent  = n + '/' + MAX;
+}
+
+// ── Messages ──
+function addAI(html) {
+  const a = document.getElementById('msg-area');
+  const r = document.createElement('div');
+  r.className = 'msg-row';
+  r.innerHTML = `<div class="msg-av">🧭</div><div class="bubble ai-b">${html}</div>`;
+  a.appendChild(r);
+  a.scrollTop = a.scrollHeight;
+}
+function addUser(txt) {
+  const a = document.getElementById('msg-area');
+  const r = document.createElement('div');
+  r.className = 'msg-row user-row';
+  r.innerHTML = `<div class="bubble user-b">${txt}</div>`;
+  a.appendChild(r);
+  a.scrollTop = a.scrollHeight;
+}
+function showTyping() {
+  const a = document.getElementById('msg-area');
+  const r = document.createElement('div');
+  r.id = 'typing-r'; r.className = 'msg-row';
+  r.innerHTML = `<div class="msg-av">🧭</div><div class="bubble typing-b"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  a.appendChild(r);
+  a.scrollTop = a.scrollHeight;
+}
+function rmTyping() { const e = document.getElementById('typing-r'); if (e) e.remove(); }
+
+function clearInput() {
+  document.getElementById('opt-zone').innerHTML = '';
+  document.getElementById('free-wrap').style.display = 'none';
+}
+
+// ── MCQ ──
+function showMCQ(opts) {
+  clearInput();
+  const z = document.getElementById('opt-zone');
+  const w = document.createElement('div');
+  w.innerHTML = '<div class="opt-label">Choose one</div>';
+  const l = document.createElement('div');
+  l.className = 'mcq-list';
+  opts.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.className = 'mcq-btn';
+    b.innerHTML = `<span class="mcq-key">${ABC[i]}</span>${o}`;
+    b.onclick   = () => { if (!busy) pick(o); };
+    l.appendChild(b);
+  });
+  w.appendChild(l); z.appendChild(w);
+  document.getElementById('msg-area').scrollTop = 99999;
+}
+
+function showFree(ph) {
+  clearInput();
+  const inp = document.getElementById('free-inp');
+  inp.placeholder = ph || 'Type your answer…';
+  inp.value = '';
+  document.getElementById('free-wrap').style.display = 'block';
+  setTimeout(() => inp.focus(), 80);
+}
+
+function sendFree() {
+  const v = document.getElementById('free-inp').value.trim();
+  if (!v || busy) return;
+  clearInput();
+  addUser(v);
+  doTurn(v);
+}
+function pick(val) { clearInput(); addUser(val); doTurn(val); }
+
+// ── Opening ──
+function openChat() {
+  const msg = `Hey ${uName}! 👋 I'm your SkillPath advisor — think of me as that one friend who's brutally honest and actually knows their stuff about digital skills and careers.\n\nI'm going to ask you <strong>15 questions</strong>. Not a form — a real conversation. Your answers will tell me exactly which digital skill fits your brain, your situation, and your goals.\n\nNo right or wrong answers here. The more honest you are, the more accurate your result.\n\nLet's start simple: <strong>what's your current life situation right now?</strong>`;
+  addAI(msg);
+  hist.push({ role: 'assistant', content: msg });
+  showMCQ([
+    '🎓 I\'m a student',
+    '💼 I work a 9–5 job',
+    '🔍 I\'m unemployed / job hunting',
+    '💻 I already freelance on the side',
+    '🚀 I run my own business'
+  ]);
+}
+
+// ── API call ──
+async function doTurn(ans) {
+  if (busy) return;
+  busy = true;
+  turn++;
+  setProgress(turn);
+  hist.push({ role: 'user', content: ans });
+  document.getElementById('adv-status').textContent = '● Thinking…';
+  showTyping();
+
+  const isFinal = turn >= MAX;
+  const note = isFinal
+    ? `\n\n[SYSTEM: Turn ${turn}/${MAX} — FINAL turn. Produce the complete FINAL JSON result now. Do not ask another question.]`
+    : `\n\n[SYSTEM: Turn ${turn}/${MAX}. Continue the conversation.]`;
+
+  try {
+    const res  = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: uName, messages: hist, turnNote: note })
+    });
+    const data = await res.json();
+    const raw  = (data.content?.[0]?.text || '').replace(/```json|```/g, '').trim();
+    const obj  = JSON.parse(raw);
+
+    hist.push({ role: 'assistant', content: raw });
+    rmTyping();
+    busy = false;
+    document.getElementById('adv-status').textContent = '● Listening…';
+
+    if (obj.FINAL) {
+      document.getElementById('adv-status').textContent = '● Analysis complete ✓';
+      show('loading');
+      animSteps(() => renderResult(obj));
+      return;
+    }
+
+    const txt = obj.reaction
+      ? `${obj.reaction}<br><br><strong>${obj.question}</strong>`
+      : `<strong>${obj.question}</strong>`;
+    addAI(txt);
+
+    if (obj.type === 'mcq' && Array.isArray(obj.options) && obj.options.length) showMCQ(obj.options);
+    else showFree();
+
+  } catch (err) {
+    rmTyping(); busy = false;
+    addAI(`<span style="color:var(--red)">Something went wrong — please try again.<br><small style="opacity:.6">${err.message}</small></span>`);
+    showFree('Try again…');
+  }
+}
+
+// ── Loading animation ──
+function animSteps(cb) {
+  let i = 0;
+  const items = document.querySelectorAll('.step-item');
+  const t = setInterval(() => {
+    if (i > 0) items[i-1].classList.add('done');
+    if (i < items.length) { items[i].classList.add('vis'); i++; }
+    else { clearInterval(t); setTimeout(cb, 700); }
+  }, 680);
+}
+
+// ── Result ──
+function renderResult(r) {
+  show('result');
+
+  document.getElementById('res-hero').innerHTML = `
+    <div class="res-for">Your personalised recommendation, ${uName}</div>
+    <div class="res-skill">${r.emoji} ${r.skill}</div>
+    <div class="res-headline">"${r.headline}"</div>
+    <div class="fit-badge">
+      <div class="fit-bar"><div class="fit-fill" id="fit-fill" style="width:0%"></div></div>
+      ${r.fitScore}% match for you
+    </div>`;
+
+  setTimeout(() => { const f = document.getElementById('fit-fill'); if (f) f.style.width = r.fitScore + '%'; }, 400);
+
+  const rmHTML = r.roadmap.map((p, i) => `
+    <div class="rm-card">
+      <div class="rm-num">${i+1}</div>
+      <div class="rm-phase">${p.phase}</div>
+      <div class="rm-dur">⏱ ${p.duration}</div>
+      <ul class="rm-items">
+        ${(Array.isArray(p.items) ? p.items : [p.items]).map(it => `<li>${it}</li>`).join('')}
+      </ul>
+    </div>`).join('');
+
+  const resHTML = r.resources.map(x => `
+    <a class="res-card" href="${x.url}" target="_blank" rel="noopener">
+      <div class="res-icon">${x.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="res-name">${x.name}</div>
+        <div class="res-meta">${x.type} · ${x.why}</div>
+      </div>
+      <span class="res-badge ${x.free ? 'badge-free':'badge-paid'}">${x.free?'FREE':'PAID'}</span>
+    </a>`).join('');
+
+  document.getElementById('res-body').innerHTML = `
+    <div class="why-card">
+      <div class="card-label">💬 Why this skill is right for you</div>
+      <div class="why-text">${r.personalReason}</div>
+    </div>
+
+    ${r.warningSign ? `<div class="warn-card"><div style="font-size:1.1rem;flex-shrink:0">⚠️</div><div><strong style="color:var(--red);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;font-family:'Syne',sans-serif;display:block;margin-bottom:4px">Watch out for this</strong>${r.warningSign}</div></div>` : ''}
+
+    ${r.alternativeSkill ? `<div class="alt-card"><div>💡</div><div><div class="alt-lbl">Alternative to consider</div><div class="alt-skill">${r.alternativeSkill}</div></div></div>` : ''}
+
+    <div class="sec-head">💰 Income potential</div>
+    <div class="income-grid">
+      <div class="inc-card"><div class="inc-tier">Beginner</div><div class="inc-amount">${r.income.beginner}</div><div class="inc-note">Getting started</div></div>
+      <div class="inc-card"><div class="inc-tier">Intermediate</div><div class="inc-amount">${r.income.intermediate}</div><div class="inc-note">6–18 months in</div></div>
+      <div class="inc-card"><div class="inc-tier">Expert</div><div class="inc-amount">${r.income.expert}</div><div class="inc-note">2+ years in</div></div>
+    </div>
+    <div class="time-pill">⚡ Realistic time to first paid work: <strong>${r.timeToEarn}</strong></div>
+
+    <div class="tabs-nav">
+      <button class="tab-pill on" onclick="doTab('roadmap',this)">📍 Your Roadmap</button>
+      <button class="tab-pill"    onclick="doTab('resources',this)">📚 Resources</button>
+    </div>
+    <div id="tab-roadmap"   class="tab-panel on">${rmHTML}</div>
+    <div id="tab-resources" class="tab-panel">${resHTML}</div>
+
+    <button class="restart-btn" onclick="restart()">↩ Start over</button>
+  `;
+}
+
+function doTab(name, btn) {
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('tab-' + name).classList.add('on');
+}
+
+function restart() {
+  uName = ''; turn = 0; hist = []; busy = false;
+  document.getElementById('msg-area').innerHTML  = '';
+  document.getElementById('opt-zone').innerHTML  = '';
+  document.getElementById('free-wrap').style.display = 'none';
+  document.getElementById('prog-fill').style.width   = '0%';
+  document.getElementById('prog-txt').textContent    = '0/15';
+  document.querySelectorAll('.step-item').forEach(s => s.classList.remove('vis','done'));
+  document.getElementById('name-inp').value = '';
+  show('hero');
+}
+</script>
+</body>
+</html>
