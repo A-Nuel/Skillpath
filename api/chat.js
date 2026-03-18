@@ -96,15 +96,15 @@ export default async function handler(req) {
 
     const geminiData = await geminiRes.json();
 
-    let text = '';
-    try {
-      text = geminiData.candidates[0].content.parts[0].text;
-    } catch (e) {
+    // Show exact Gemini response if something went wrong
+    if (!geminiData.candidates || !geminiData.candidates[0]) {
       return new Response(
-        JSON.stringify({ error: 'Bad Gemini response', raw: JSON.stringify(geminiData) }),
+        JSON.stringify({ error: 'Gemini error: ' + JSON.stringify(geminiData) }),
         { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
       );
     }
+
+    let text = geminiData.candidates[0].content.parts[0].text || '';
 
     text = text.trim();
     text = text.replace(/^```json\s*/i, '');
@@ -129,4 +129,4 @@ export default async function handler(req) {
       { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
     );
   }
-  }
+      }
