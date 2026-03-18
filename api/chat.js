@@ -1,4 +1,5 @@
 export const config = { runtime: 'edge' };
+
 const SYSTEM_PROMPT = `You are SkillPath, a sharp and deeply perceptive digital career advisor. You are having a real conversation with {NAME} to figure out the exact right digital skill for them to learn even if they have zero idea what they want.
 
 You have a diagnostic framework covering these dimensions:
@@ -59,27 +60,75 @@ export default async function handler(req) {
 
     const systemPrompt = SYSTEM_PROMPT.replace(/\{NAME\}/g, name);
 
+    // Build Gemini contents - only keep user/assistant alternating messages
+    // Strip any non-string content and ensure clean text
     const geminiContents = [];
     for (let i = 0; i < messages.length; i++) {
       const m = messages[i];
+      const role = m.role === 'assistant' ? 'model' : 'user';
+      // Ensure text is a plain string - if it's JSON stringify it cleanly
+      let text = '';
+      if (typeof m.content === 'string') {
+        text = m.content;
+      } else {
+        text = JSON.stringify(m.content);
+      }
+      // Skip empty messages
+      if (!text || text.trim() === '') continue;
+      // Limit each message to 2000 chars to avoid payload bloat
+      if (text.length > 2000) {
+        text = text.substring(0, 2000);
+      }
       geminiContents.push({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
+        role: role,
+        parts: [{ text: text }]
       });
     }
 
-    if (turnNote && geminiContents.length > 0) {
-      const last = geminiContents[geminiContents.length - 1];
+    // Gemini requires alternating user/model roles
+    // If two same roles appear consecutively, merge them
+    const cleanedContents = [];
+    for (let i = 0; i < geminiContents.length; i++) {
+      const current = geminiContents[i];
+      if (cleanedContents.length === 0) {
+        cleanedContents.push({ role: current.role, parts: [{ text: current.parts[0].text }] });
+      } else {
+        const last = cleanedContents[cleanedContents.length - 1];
+        if (last.role === current.role) {
+          // Merge with previous
+          last.parts[0].text = last.parts[0].text + ' ' + current.parts[0].text;
+        } else {
+          cleanedContents.push({ role: current.role, parts: [{ text: current.parts[0].text }] });
+        }
+      }
+    }
+
+    // Must start with user role for Gemini
+    if (cleanedContents.length > 0 && cleanedContents[0].role === 'model') {
+      cleanedContents.shift();
+    }
+
+    // Append turn note to last user message
+    if (turnNote && cleanedContents.length > 0) {
+      const last = cleanedContents[cleanedContents.length - 1];
       if (last.role === 'user') {
         last.parts[0].text = last.parts[0].text + ' ' + turnNote;
       }
+    }
+
+    // Ensure we have at least one message
+    if (cleanedContents.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No valid messages to send' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
     }
 
     const geminiPayload = {
       system_instruction: {
         parts: [{ text: systemPrompt }]
       },
-      contents: geminiContents,
+      contents: cleanedContents,
       generationConfig: {
         temperature: 0.8,
         maxOutputTokens: 8192,
@@ -97,22 +146,24 @@ export default async function handler(req) {
 
     const geminiData = await geminiRes.json();
 
-    // Show exact Gemini response if something went wrong
+    // Check for Gemini-level errors
     if (!geminiData.candidates || !geminiData.candidates[0]) {
       return new Response(
-        JSON.stringify({ error: 'Gemini error: ' + JSON.stringify(geminiData) }),
+        JSON.stringify({ error: 'Gemini error', raw: JSON.stringify(geminiData) }),
         { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
       );
     }
 
     let text = geminiData.candidates[0].content.parts[0].text || '';
 
+    // Clean any accidental markdown wrapping
     text = text.trim();
     text = text.replace(/^```json\s*/i, '');
     text = text.replace(/^```\s*/i, '');
     text = text.replace(/\s*```$/i, '');
     text = text.trim();
 
+    // Extract just the JSON object
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace !== -1) {
@@ -130,4 +181,4 @@ export default async function handler(req) {
       { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
     );
   }
-      }
+}
