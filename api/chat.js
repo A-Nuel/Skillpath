@@ -32,22 +32,22 @@ CONVERSATION RULES:
 - Keep reactions to 1-2 sentences — punchy, not preachy
 - Sound like a smart friend, not a career counselor
 
-RESPONSE FORMAT FOR TURNS 1-15 — return ONLY this JSON, nothing else, no markdown:
+RESPONSE FORMAT FOR TURNS 1-15 — return ONLY valid JSON, no markdown, no backticks, nothing else:
 {
   "turn": <number 1-15>,
   "reaction": "Personal 1-2 sentence reaction to their answer. Reference what they said. Warm but sharp.",
   "question": "Your single focused next question",
-  "type": "mcq" or "free",
+  "type": "mcq",
   "options": ["option 1", "option 2", "option 3", "Something else / tell me more"]
 }
 
-AFTER TURN 15 — return ONLY this JSON, nothing else, no markdown:
+AFTER TURN 15 — return ONLY valid JSON, no markdown, no backticks, nothing else:
 {
   "FINAL": true,
   "skill": "Skill Name",
   "emoji": "one emoji",
   "headline": "7-9 word punchy headline about this recommendation",
-  "personalReason": "4-5 sentences. Reference AT LEAST 4 specific things they said. Make it feel written ONLY for them. Explain WHY this skill fits their personality, their situation, their strengths, and their goals specifically.",
+  "personalReason": "4-5 sentences referencing AT LEAST 4 specific things they said.",
   "fitScore": 87,
   "income": {
     "beginner": "$X-$Y/month",
@@ -56,17 +56,17 @@ AFTER TURN 15 — return ONLY this JSON, nothing else, no markdown:
   },
   "timeToEarn": "Realistic time to first paid work",
   "roadmap": [
-    { "phase": "Foundation", "duration": "X weeks", "items": ["specific action 1", "specific action 2", "specific action 3"] },
-    { "phase": "Build Portfolio", "duration": "X weeks", "items": ["...", "...", "..."] },
-    { "phase": "Land First Client", "duration": "X weeks", "items": ["...", "...", "..."] },
-    { "phase": "Scale Up", "duration": "X months", "items": ["...", "...", "..."] }
+    { "phase": "Foundation", "duration": "X weeks", "items": ["action 1", "action 2", "action 3"] },
+    { "phase": "Build Portfolio", "duration": "X weeks", "items": ["action 1", "action 2", "action 3"] },
+    { "phase": "Land First Client", "duration": "X weeks", "items": ["action 1", "action 2", "action 3"] },
+    { "phase": "Scale Up", "duration": "X months", "items": ["action 1", "action 2", "action 3"] }
   ],
   "resources": [
-    { "name": "Resource Name", "type": "Course", "url": "https://real-url.com", "free": true, "icon": "emoji", "why": "Why this is the best starting point" },
-    { "name": "...", "type": "Platform", "url": "https://...", "free": false, "icon": "...", "why": "..." },
-    { "name": "...", "type": "Community", "url": "https://...", "free": true, "icon": "...", "why": "..." },
-    { "name": "...", "type": "Tool", "url": "https://...", "free": true, "icon": "...", "why": "..." },
-    { "name": "...", "type": "Course", "url": "https://...", "free": false, "icon": "...", "why": "..." }
+    { "name": "Resource Name", "type": "Course", "url": "https://real-url.com", "free": true, "icon": "emoji", "why": "Short reason to use this" },
+    { "name": "Resource Name", "type": "Platform", "url": "https://real-url.com", "free": false, "icon": "emoji", "why": "Short reason to use this" },
+    { "name": "Resource Name", "type": "Community", "url": "https://real-url.com", "free": true, "icon": "emoji", "why": "Short reason to use this" },
+    { "name": "Resource Name", "type": "Tool", "url": "https://real-url.com", "free": true, "icon": "emoji", "why": "Short reason to use this" },
+    { "name": "Resource Name", "type": "Course", "url": "https://real-url.com", "free": false, "icon": "emoji", "why": "Short reason to use this" }
   ],
   "warningSign": "One honest challenge or trap to watch out for with this skill",
   "alternativeSkill": "A second skill worth considering if this one does not click"
@@ -95,17 +95,15 @@ export default async function handler(req) {
       return new Response(JSON.stringify({ error: 'API key not configured' }), { status: 500 });
     }
 
-    const systemPrompt = SYSTEM_PROMPT
-      .replace(/\{NAME\}/g, name || 'there');
+    const systemPrompt = SYSTEM_PROMPT.replace(/\{NAME\}/g, name || 'there');
 
-    // Convert conversation history to Gemini format
-    // Gemini uses "user" and "model" roles (not "assistant")
+    // Convert history to Gemini format (uses "model" not "assistant")
     const geminiContents = messages.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }]
     }));
 
-    // Append turn note to last user message
+    // Append turn note to the last user message
     if (turnNote && geminiContents.length > 0) {
       const last = geminiContents[geminiContents.length - 1];
       if (last.role === 'user') {
@@ -126,24 +124,40 @@ export default async function handler(req) {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    const response = await fetch(url, {
+    const geminiRes = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(geminiPayload)
     });
 
-    const data = await response.json();
+    const geminiData = await geminiRes.json();
 
-    // Extract text from Gemini response format
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // Extract text from Gemini response
+    const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Return in a shape the frontend expects: { content: [{ text }] }
+    if (!text) {
+      return new Response(JSON.stringify({ error: 'Empty response from Gemini', raw: geminiData }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    // Return in the shape the frontend expects
     return new Response(JSON.stringify({ content: [{ text }] }), {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       }
     });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  }
+}
+});
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
